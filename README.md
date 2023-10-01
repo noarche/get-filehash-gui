@@ -18,4 +18,4 @@ all of the above
 results will be displayed with option to copy to clipboard or save as text file.
 
 
-[![noarche's GitHub stats](https://github-readme-stats.vercel.app/api?username=noarche)](https://github.com/noarche/github-readme-stats)
+![noarche's GitHub stats](https://github-readme-stats.vercel.app/api?username=noarche&show_icons=true&theme=transparent)
