@@ -1,6 +1,7 @@
 # get-filehash-gui
 get-filehash-GUI
-![screenshot](https://raw.githubusercontent.com/noarche/get-filehash-gui/main/September%2030%202023%201257%20PM.jpg)
+![September 30 2023 1257 PM](https://github.com/user-attachments/assets/5194a1bf-2fb7-45b0-8a22-c9a9555c207d)
+
 
 user is prompted to select either path
 
