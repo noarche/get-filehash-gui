@@ -1,7 +1,7 @@
 import os
 import hashlib
 import tkinter as tk
-from tkinter import simpledialog, messagebox, filedialog, Text, Button, Toplevel
+from tkinter import simpledialog, messagebox, filedialog, Text, Button, Toplevel, StringVar, OptionMenu
 
 
 def calculate_hash(file_path, algorithm):
@@ -23,6 +23,20 @@ def calculate_hash(file_path, algorithm):
             hasher.update(buf)
             buf = file.read(BUF_SIZE)
     return hasher.hexdigest()
+
+
+def format_size(size_bytes):
+    """Format file size in human-readable units."""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 ** 2:
+        return f"{size_bytes / 1024:.2f} KB"
+    elif size_bytes < 1024 ** 3:
+        return f"{size_bytes / 1024 ** 2:.2f} MB"
+    elif size_bytes < 1024 ** 4:
+        return f"{size_bytes / 1024 ** 3:.2f} GB"
+    else:
+        return f"{size_bytes / 1024 ** 4:.2f} TB"
 
 
 def copy_to_clipboard(content):
@@ -49,7 +63,11 @@ def display_results(result):
     text_widget.insert(tk.END, result)
     text_widget.pack(padx=10, pady=10)
 
-    copy_button = Button(result_win, text="Copy to Clipboard", command=lambda: copy_to_clipboard(text_widget.get(1.0, tk.END)))
+    def copy_without_results_line():
+        content = "\n".join(result.splitlines()[1:])  # Remove the first line ("Results:")
+        copy_to_clipboard(content)
+
+    copy_button = Button(result_win, text="Copy to Clipboard", command=copy_without_results_line)
     copy_button.pack(side=tk.LEFT, padx=10, pady=10)
 
     save_button = Button(result_win, text="Save to File", command=lambda: save_to_file(text_widget.get(1.0, tk.END)))
@@ -65,35 +83,46 @@ def prompt_for_input():
         if not answer:
             return
 
-    algorithm = simpledialog.askstring("Algorithm", "Choose an algorithm:\n1. sha1\n2. sha256\n3. sha384\n4. sha512\n5. All of the above", initialvalue="1")
+    algorithm_var = StringVar()
+    algorithm_var.set("sha1")  # Set default value
 
-    algorithms_to_apply = []
-    if algorithm == "1":
-        algorithms_to_apply = ["sha1"]
-    elif algorithm == "2":
-        algorithms_to_apply = ["sha256"]
-    elif algorithm == "3":
-        algorithms_to_apply = ["sha384"]
-    elif algorithm == "4":
-        algorithms_to_apply = ["sha512"]
-    elif algorithm == "5":
-        algorithms_to_apply = ["sha1", "sha256", "sha384", "sha512"]
+    algorithm_window = Toplevel(root)
+    algorithm_window.title("Select Hash Algorithm")
+    tk.Label(algorithm_window, text="Select a hash algorithm:").pack(padx=10, pady=10)
 
-    result = "Results:\n"
+    OptionMenu(algorithm_window, algorithm_var, "sha1", "sha256", "sha384", "sha512", "All").pack(padx=10, pady=10)
 
-    if os.path.isfile(path):
-        result += f"File: {os.path.basename(path)}\n"
-        for algo in algorithms_to_apply:
-            result += f"{algo.upper()}: {calculate_hash(path, algo)}\n\n"
-    elif os.path.isdir(path):
-        for root, _, files in os.walk(path):
-            for file_name in files:
-                full_file_path = os.path.join(root, file_name)
-                result += f"File: {file_name}\n"
-                for algo in algorithms_to_apply:
-                    result += f"{algo.upper()}: {calculate_hash(full_file_path, algo)}\n\n"
+    def on_algorithm_selected():
+        algorithm_window.destroy()
+        selected_algorithm = algorithm_var.get()
 
-    display_results(result)
+        algorithms_to_apply = []
+        if selected_algorithm == "All":
+            algorithms_to_apply = ["sha1", "sha256", "sha384", "sha512"]
+        else:
+            algorithms_to_apply = [selected_algorithm]
+
+        result = "Results:\n"
+
+        if os.path.isfile(path):
+            file_size = os.path.getsize(path)
+            result += f"File: {os.path.basename(path)}\n"
+            for algo in algorithms_to_apply:
+                result += f"{algo.upper()}: {calculate_hash(path, algo)}\n"
+            result += f"Size: {format_size(file_size)}\n\n"
+        elif os.path.isdir(path):
+            for root, _, files in os.walk(path):
+                for file_name in files:
+                    full_file_path = os.path.join(root, file_name)
+                    file_size = os.path.getsize(full_file_path)
+                    result += f"File: {file_name}\n"
+                    for algo in algorithms_to_apply:
+                        result += f"{algo.upper()}: {calculate_hash(full_file_path, algo)}\n"
+                    result += f"Size: {format_size(file_size)}\n\n"
+
+        display_results(result)
+
+    Button(algorithm_window, text="OK", command=on_algorithm_selected).pack(pady=10)
 
 
 root = tk.Tk()
